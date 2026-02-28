@@ -1,0 +1,25 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+build_pkg/
+
+# Virtual environments
+.venv
+.timetracker
+qtsources
+.mypy_cache
+.ruff_cache
+src/common/version.py
+
+# nodejs packages
+package-lock.json
+package.json
+node_modules/
+
+# repomix
+repomix-output.xml
+

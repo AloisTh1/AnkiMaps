@@ -1,0 +1,50 @@
+[project]
+name = "ankimaps"
+version = "1.0.0"
+description = "Anki add-on to create MindMaps with Anki cards."
+readme = "README.md"
+requires-python = "==3.9.*"
+authors = [{ name = "Aloïs Thibert", email = "alois.thibert@gmail.com" }]
+license = { file = "LICENSE.txt" }
+urls = { Repository = "https://github.com/AloisTh1/" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+]
+dependencies = [
+    "aqt==25.2.7",
+    "mypy>=1.11.2",
+    "pre-commit>=4.0.1",
+    "pyqt6-tools>=6.4.2.3.3",
+    "ruff>=0.6.9",
+    "python-minifier>=2.10.0",
+    "python-semantic-release>=9.8.8",
+]
+
+[tool.ruff]
+line-length = 110
+
+[tool.semantic_release]
+tag_format = "v{version}"
+version_toml = ["pyproject.toml:project.version"]
+build_command = "python package.py"
+commit_parser = "conventional"
+major_on_zero = false
+allow_zero_version = false
+
+[tool.semantic_release.branches.main]
+match = "main"
+prerelease = false
+
+[tool.semantic_release.changelog]
+mode = "update"
+insertion_flag = "<!-- version list -->"
+
+[tool.semantic_release.changelog.default_templates]
+changelog_file = "CHANGELOG.md"
+output_format = "md"
+
+[tool.semantic_release.publish]
+dist_glob_patterns = ["dist/*"]
+upload_to_vcs_release = true

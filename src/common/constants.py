@@ -1,0 +1,32 @@
+from enum import Enum
+
+
+class ANKIMAPS_CONSTANTS(Enum):
+    ADD_ON_NAME = "AnkiMaps"
+    MINDMAP_DIRECTORY_NAME = "mindmaps"
+    USER_FILES_DIRECTORY_NAME = "user_files"
+    BACKUPS_DIRECTORY_NAME = "backups"
+    MAX_BACKUPS_PER_MAP = 5
+    FILTERED_DECK_NAME = "AnkiMap dues cards"
+
+    # connections
+    DEFAULT_CONNECTION_COLOR = "#CACACA"
+    DEFAULT_CONNECTION_SIZE = 2
+    DEFAULT_CONNECTION_LABEL_FONT_SIZE = 12
+
+    # positions
+    DEFAULT_NOTE_X = 0
+    DEFAULT_NOTE_Y = 0
+
+    # size
+    DEFAULT_NOTE_WIDTH = 200
+    NOTE_MIN_WIDTH = 50
+    NOTE_RESIZE_HANDLE_SIZE = 25
+    DEFAULT_NOTE_FONT_SIZE = 12
+
+    #  general overview
+    DEFAULT_NOTE_BLUR_RADIUS = 20
+    DRAG_PROXY_THRESHOLD = 50
+    LOD_SCALE_THRESHOLD = 0.2
+    MIN_ZOOM = 0.01
+    MAX_ZOOM = 3.0
