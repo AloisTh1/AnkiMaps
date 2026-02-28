@@ -90,11 +90,11 @@ flowchart TD
 
 Each mindmap is a dedicated SQLite file under:
 
-- `user_files/mindmaps/<map_name>.db`
+- `addons21/AnkiMaps/user_files/mindmaps/<map_name>.db`
 
 Backups are stored under:
 
-- `user_files/backups/<map_name>/`
+- `addons21/AnkiMaps/user_files/backups/<map_name>/`
 
 ## Upgrade Path
 

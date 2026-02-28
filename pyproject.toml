@@ -4,9 +4,9 @@ version = "1.0.0"
 description = "Anki add-on to create MindMaps with Anki cards."
 readme = "README.md"
 requires-python = "==3.9.*"
-authors = [{ name = "Aloïs Thibert", email = "alois.thibert@gmail.com" }]
+authors = [{ name = "Alois Thibert", email = "alois.thibert@gmail.com" }]
 license = { file = "LICENSE.txt" }
-urls = { Repository = "https://github.com/AloisTh1/" }
+urls = { Repository = "https://github.com/AloisTh1/AnkiMaps" }
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
