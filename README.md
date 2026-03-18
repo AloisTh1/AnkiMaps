@@ -62,7 +62,7 @@ See `LICENSE.txt` for the full text.
 ## Support
 
 For support, bug reports, or feature requests, please contact:
-**alois [dot] thibert [at] gmail [dot] com**
+**alois [dot] devlp [at] gmail [dot] com**
 
 ## Author
 
