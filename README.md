@@ -1,5 +1,7 @@
 # AnkiMaps
 
+![AnkiMaps logo](assets/packaging/logo_normal.png)
+
 AnkiMaps brings mind maps directly into Anki so you can visualize concepts, connect ideas, and review with better context.
 
 ## What You Can Do
