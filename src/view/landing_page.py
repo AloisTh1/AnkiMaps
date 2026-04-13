@@ -3,8 +3,10 @@ from datetime import datetime
 from typing import Any, Optional
 
 from aqt.qt import (
+    QApplication,
     QComboBox,
     QDialog,
+    QFrame,
     QGroupBox,
     QGridLayout,
     QHBoxLayout,
@@ -16,9 +18,11 @@ from aqt.qt import (
     QMessageBox,
     QPixmap,
     QPushButton,
+    QScrollArea,
     QShortcut,
     Qt,
     QVBoxLayout,
+    QWidget,
     pyqtSignal,
 )
 from aqt.utils import showWarning
@@ -37,6 +41,10 @@ class LandingWindow(QDialog):
     import_bundle_requested = pyqtSignal()
     STYLESHEET_FILE_NAME = "landing_page.qss"
 
+    SCREEN_MARGIN = 72
+    DEFAULT_DIALOG_WIDTH = 560
+    DEFAULT_DIALOG_HEIGHT = 780
+
     def __init__(
         self,
         mindmap_names: list[str],
@@ -48,11 +56,28 @@ class LandingWindow(QDialog):
         self.addon_version = addon_version
         self.mindmap_infos = mindmap_infos
         self.setWindowTitle("AnkiMaps")
-        self.setMinimumWidth(560)
+        self.setMinimumWidth(400)
+
+        # Outer layout for the dialog holds only the scroll area
+        outer_layout = QVBoxLayout()
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(outer_layout)
+
+        # Scroll area wrapping all content
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        outer_layout.addWidget(scroll_area)
+
+        # Inner content widget
+        content_widget = QWidget()
         self.layout: QVBoxLayout = QVBoxLayout()
         self.layout.setContentsMargins(12, 12, 12, 12)
         self.layout.setSpacing(8)
-        self.setLayout(self.layout)
+        content_widget.setLayout(self.layout)
+        scroll_area.setWidget(content_widget)
 
         logo_label = QLabel()
         logo_path = os.path.join(os.path.dirname(__file__), "assets", "logo.png")
@@ -172,6 +197,7 @@ class LandingWindow(QDialog):
         self.layout.addWidget(tools_actions_group)
 
         self._apply_stylesheet()
+        self._apply_initial_window_size()
 
         self.selected_map = None
 
@@ -198,6 +224,16 @@ class LandingWindow(QDialog):
         self.enter_shortcut.activated.connect(self._on_enter_shortcut)
 
         self.refresh_mindmap_list()
+
+    def _apply_initial_window_size(self) -> None:
+        screen = QApplication.primaryScreen()
+        if screen:
+            available = screen.availableGeometry()
+            width = min(self.DEFAULT_DIALOG_WIDTH, available.width() - self.SCREEN_MARGIN)
+            height = min(self.DEFAULT_DIALOG_HEIGHT, available.height() - self.SCREEN_MARGIN)
+            self.resize(width, height)
+        else:
+            self.resize(self.DEFAULT_DIALOG_WIDTH, self.DEFAULT_DIALOG_HEIGHT)
 
     def _apply_stylesheet(self) -> None:
         stylesheet_path = os.path.join(
