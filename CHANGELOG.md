@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2.3.1 (2026-04-13)
+
+### Bug Fixes
+
+- Only run semantic-release publish when a new version is created
+  ([`7b97b25`](https://github.com/AloisTh1/AnkiMaps/commit/7b97b25956e8df1b3a8eebb3b322a31e0f89e565))
+
+
 ## v1.0.0 (2026-04-13)
 
 - Initial Release
