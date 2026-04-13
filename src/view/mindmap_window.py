@@ -242,6 +242,7 @@ class MindMapWindow(QMainWindow):
     ) -> QAction:
         action = QAction(text, self)
         action.setShortcut(QKeySequence(shortcut))
+        action.setShortcutContext(Qt.ShortcutContext.WindowShortcut)
         action.setEnabled(enabled)
         action.setCheckable(checkable)
         if checkable:
@@ -413,7 +414,7 @@ class MindMapWindow(QMainWindow):
         return (event.key(), event.modifiers())
 
     def eventFilter(self, watched: QObject, event):
-        if self.isVisible():
+        if self.isVisible() and self.isActiveWindow():
             shortcut_override_type = self._get_qevent_type("ShortcutOverride")
             if (
                 shortcut_override_type is not None
