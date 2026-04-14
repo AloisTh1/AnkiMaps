@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2.4.2 (2026-04-14)
+
+### Bug Fixes
+
+- Store user files in loaded addon folder
+  ([`e56ba7b`](https://github.com/AloisTh1/AnkiMaps/commit/e56ba7b147332ded3146262babaa53cf000c98f4))
+
+
 ## v2.4.1 (2026-04-14)
 
 ### Bug Fixes

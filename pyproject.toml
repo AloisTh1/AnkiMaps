@@ -1,6 +1,6 @@
 [project]
 name = "ankimaps"
-version = "2.4.1"
+version = "2.4.2"
 description = "Anki add-on to create MindMaps with Anki cards."
 readme = "README.md"
 requires-python = "==3.9.*"
