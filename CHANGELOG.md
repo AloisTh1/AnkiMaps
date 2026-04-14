@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2.4.4 (2026-04-14)
+
+### Bug Fixes
+
+- Clarify mindmap recovery instructions
+  ([`c858d35`](https://github.com/AloisTh1/AnkiMaps/commit/c858d35ef1e9b8191264aadae89a03937cb0865f))
+
+
 ## v2.4.3 (2026-04-14)
 
 ### Bug Fixes
