@@ -7,7 +7,10 @@ from typing import Optional, Union
 from aqt.utils import showWarning
 
 from .constants import ANKIMAPS_CONSTANTS
-from .utils import ensure_main_window
+
+
+def get_loaded_anki_addon_path() -> str:
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
 def get_add_on_last_mindmap_file_path() -> Union[str, None]:
@@ -32,9 +35,7 @@ def check_if_mindmap_exists(mindmap_path: str):
 
 
 def get_anki_addon_path() -> Union[str, None]:
-    if mw := ensure_main_window():
-        addons_folder_path = mw.addonManager.addonsFolder()
-        return os.path.join(addons_folder_path, str(ANKIMAPS_CONSTANTS.ADD_ON_NAME.value))
+    return get_loaded_anki_addon_path()
 
 
 def get_anki_addon_user_files_path() -> Union[str, None]:
@@ -104,6 +105,55 @@ def initialize_user_directories() -> None:
         os.makedirs(mindmaps_storage_path, exist_ok=True)
     if backups_storage_path := get_backups_storage_path():
         os.makedirs(backups_storage_path, exist_ok=True)
+    migrate_legacy_user_files()
+
+
+def migrate_legacy_user_files() -> None:
+    current_user_files_path = get_anki_addon_user_files_path()
+    current_mindmaps_path = get_mindmaps_storage_path()
+    if not (current_user_files_path and current_mindmaps_path):
+        return
+
+    loaded_addon_path = get_loaded_anki_addon_path()
+    addons_folder_path = os.path.dirname(loaded_addon_path)
+    legacy_user_files_path = os.path.join(
+        addons_folder_path,
+        ANKIMAPS_CONSTANTS.ADD_ON_NAME.value,
+        ANKIMAPS_CONSTANTS.USER_FILES_DIRECTORY_NAME.value,
+    )
+
+    if os.path.normcase(os.path.abspath(legacy_user_files_path)) == os.path.normcase(
+        os.path.abspath(current_user_files_path)
+    ):
+        return
+    if not os.path.isdir(legacy_user_files_path):
+        return
+
+    legacy_mindmaps_path = os.path.join(
+        legacy_user_files_path,
+        ANKIMAPS_CONSTANTS.MINDMAP_DIRECTORY_NAME.value,
+    )
+    if not os.path.isdir(legacy_mindmaps_path):
+        return
+    if any(name.endswith(".db") for name in os.listdir(current_mindmaps_path)):
+        return
+    if not any(name.endswith(".db") for name in os.listdir(legacy_mindmaps_path)):
+        return
+
+    copy_user_files(legacy_user_files_path, current_user_files_path)
+
+
+def copy_user_files(source_root: str, target_root: str) -> None:
+    for root, dirs, files in os.walk(source_root):
+        rel_root = os.path.relpath(root, source_root)
+        target_dir = target_root if rel_root == "." else os.path.join(target_root, rel_root)
+        os.makedirs(target_dir, exist_ok=True)
+
+        for file_name in files:
+            source_file = os.path.join(root, file_name)
+            target_file = os.path.join(target_dir, file_name)
+            if not os.path.exists(target_file):
+                copy2(source_file, target_file)
 
 
 def get_backups_storage_path() -> Union[str, None]:
