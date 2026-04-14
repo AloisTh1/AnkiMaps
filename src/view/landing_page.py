@@ -185,6 +185,10 @@ class LandingWindow(QDialog):
         header_layout.addLayout(header_right)
         self.layout.addLayout(header_layout)
 
+        self.lost_mindmaps_button = QPushButton("READ THIS IF YOU LOST YOUR MINDMAPS !")
+        self.lost_mindmaps_button.setObjectName("btn_lost_mindmaps")
+        self.layout.addWidget(self.lost_mindmaps_button)
+
         self.mindmap_names = list(mindmap_names)
         self.sort_options: dict[str, tuple[str, bool]] = {
             "Name (A-Z)": ("name", False),
@@ -323,6 +327,7 @@ class LandingWindow(QDialog):
         self.export_all_button.clicked.connect(self.export_all_requested.emit)
         self.theme_selector.currentTextChanged.connect(self._on_theme_changed)
         self.support_button.clicked.connect(self._on_support_clicked)
+        self.lost_mindmaps_button.clicked.connect(self._on_lost_mindmaps_clicked)
 
         self.return_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Return), self)
         self.enter_shortcut = QShortcut(QKeySequence(Qt.Key.Key_Enter), self)
@@ -346,6 +351,19 @@ class LandingWindow(QDialog):
             action = menu.addAction(label)
             action.triggered.connect(lambda _checked, u=url: self._open_url(u))
         menu.exec(self.support_button.mapToGlobal(self.support_button.rect().bottomLeft()))
+
+    def _on_lost_mindmaps_clicked(self) -> None:
+        QMessageBox.information(
+            self,
+            "Lost Mindmaps",
+            "I am deeply sorry if your mindmaps disappeared after updating AnkiMaps.\n\n"
+            "They may not be deleted. Please check these places:\n\n"
+            "1. Open your Anki add-ons folder and look for an 'AnkiMaps' folder.\n"
+            "2. Inside it, check: user_files/mindmaps\n"
+            "3. Also check your Recycle Bin / Trash for an 'AnkiMaps' folder.\n"
+            "4. If you find .db files there, those are your mindmaps.\n\n"
+            "Please do not empty your Trash until you have checked it.",
+        )
 
     def _on_theme_changed(self, theme_name: str) -> None:
         self._theme_mode = theme_name
@@ -536,6 +554,24 @@ class LandingWindow(QDialog):
                 padding: 5px 12px;
                 font-size: 12px;
                 min-width: 78px;
+            }}
+
+            {d} QPushButton#btn_lost_mindmaps {{
+                background: #dc2626;
+                border: 1px solid #991b1b;
+                color: #ffffff;
+                font-size: 13px;
+                font-weight: 800;
+                padding: 10px 14px;
+            }}
+
+            {d} QPushButton#btn_lost_mindmaps:hover {{
+                background: #b91c1c;
+                border: 1px solid #7f1d1d;
+            }}
+
+            {d} QPushButton#btn_lost_mindmaps:pressed {{
+                background: #991b1b;
             }}
 
             /* --- Delete button (danger) --- */
