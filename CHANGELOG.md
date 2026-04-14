@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2.4.0 (2026-04-14)
+
+### Features
+
+- Update landing page controls
+  ([`18faf6d`](https://github.com/AloisTh1/AnkiMaps/commit/18faf6d12fe2c7f77cc8045fa4629b106ca0f831))
+
+
 ## v2.3.1 (2026-04-13)
 
 ### Bug Fixes
