@@ -83,8 +83,6 @@ flowchart TD
   - Stores map nodes and connections in per-map SQLite files.
 - `MindmapFilesRepository`
   - File-system metadata around mindmap DB files and backups.
-- `AddonUpgradeRepository`
-  - Applies `.ankiaddon` upgrades while protecting `user_files`.
 
 ## Persistence Model
 
@@ -95,14 +93,6 @@ Each mindmap is a dedicated SQLite file under:
 Backups are stored under:
 
 - `addons21/AnkiMaps/user_files/backups/<map_name>/`
-
-## Upgrade Path
-
-- Upgrade package is selected in the landing window.
-- Package identity is validated (`manifest.json` package field).
-- Version is read from `manifest.json`.
-- Downgrades are blocked.
-- Files are copied over add-on root while preserving `user_files`.
 
 ## Packaging
 

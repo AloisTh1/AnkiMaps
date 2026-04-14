@@ -23,3 +23,5 @@ node_modules/
 # repomix
 repomix-output.xml
 
+# Playwright browser state (publish_ankiweb.py)
+.playwright-state/

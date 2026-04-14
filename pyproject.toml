@@ -22,6 +22,12 @@ dependencies = [
     "python-semantic-release>=9.8.8",
 ]
 
+[project.optional-dependencies]
+publish = ["playwright>=1.40"]
+
+[tool.ankiweb]
+addon_id = "817937364"
+
 [tool.ruff]
 line-length = 110
 

@@ -41,6 +41,7 @@ def get_anki_addon_user_files_path() -> Union[str, None]:
     if anki_addon_path := get_anki_addon_path():
         return os.path.join(anki_addon_path, ANKIMAPS_CONSTANTS.USER_FILES_DIRECTORY_NAME.value)
 
+
 def get_mindmaps_storage_path() -> Union[str, None]:
     if anki_addon_user_files_path := get_anki_addon_user_files_path():
         return os.path.join(

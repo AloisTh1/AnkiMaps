@@ -1,4 +1,5 @@
 # __init__.py
+import json
 import logging
 import os
 from logging import LogRecord
@@ -15,14 +16,13 @@ from .src.common.io import (
     create_backup,
     delete_mindmap_file,
     export_all_mindmaps,
+    get_anki_addon_path,
     get_mindmaps_storage_path,
     initialize_user_directories,
     rename_mindmap_file,
 )
-from .src.controller.addon_upgrade_controller import AddonUpgradeController
 from .src.controller.landing_page_controller import LandingPageController
 from .src.controller.mindmap_controller import MindmapController
-from .src.repository.addon_upgrade_repository import AddonUpgradeRepository
 from .src.repository.anki_repository import AnkiRepository
 from .src.repository.db.sql_repository import SqlLiteRepository
 from .src.repository.mindmap_files_repository import MindmapFilesRepository
@@ -69,7 +69,6 @@ class MindMapAddon:
         self.notes_to_add_on_load: Optional[List[NoteId]] = None
         self.landing_controller: Optional[LandingPageController] = None
         self.landing_dialog = None
-        self.upgrade_controller = AddonUpgradeController(AddonUpgradeRepository())
 
         gui_hooks.editor_did_fire_typing_timer.append(self._on_editor_update)
         notes_will_be_deleted.append(self._on_note_deleted)
@@ -120,13 +119,12 @@ class MindMapAddon:
         )
         mindmap_names, mindmap_infos = self.landing_controller.get_mindmaps_with_info()
 
-        current_version = self.upgrade_controller.get_current_version()
+        current_version = self._get_current_version()
         self.landing_dialog = LandingWindow(mindmap_names, mindmap_infos, current_version, mw)
 
         self.landing_dialog.delete_requested.connect(self._on_delete_map_requested)
         self.landing_dialog.rename_requested.connect(self._on_rename_map_requested)
         self.landing_dialog.tutorial_video_requested.connect(self._on_tutorial_video_requested)
-        self.landing_dialog.upgrade_requested.connect(self._on_upgrade_requested)
         self.landing_dialog.open_folder_requested.connect(self._on_open_folder_requested)
         self.landing_dialog.export_selected_requested.connect(self._on_export_selected_requested)
         self.landing_dialog.export_all_requested.connect(self._on_export_all_requested)
@@ -139,31 +137,20 @@ class MindMapAddon:
         self.landing_dialog = None
         self.landing_controller = None
 
-    def _on_upgrade_requested(self):
-        dialog_parent = self.landing_dialog or mw
-        archive_path, _ = QFileDialog.getOpenFileName(
-            dialog_parent,
-            "Select AnkiMaps Upgrade Package",
-            "",
-            "Anki Add-on Package (*.ankiaddon)",
-        )
-        if not archive_path:
-            return
+    def _get_current_version(self) -> str:
+        addon_path = get_anki_addon_path()
+        if not addon_path:
+            return "unknown"
 
+        manifest_path = os.path.join(addon_path, "manifest.json")
         try:
-            result = self.upgrade_controller.upgrade_from_archive(archive_path)
-            if self.landing_dialog:
-                self.landing_dialog.set_version(result.package_version)
+            with open(manifest_path, "r", encoding="utf-8") as manifest_file:
+                manifest = json.load(manifest_file)
+        except (OSError, json.JSONDecodeError):
+            return "unknown"
 
-            showInfo(
-                "Upgrade successful. "
-                f"Version: {result.current_version} -> {result.package_version}. "
-                f"Updated {result.copied_files} files.\n"
-                "Please restart Anki to load the new version."
-            )
-        except Exception as exc:
-            addon_logger.exception("Failed to apply upgrade package")
-            showWarning(f"Upgrade failed: {exc}")
+        version = manifest.get("version")
+        return str(version).strip() if version else "unknown"
 
     def _on_rename_map_requested(self, old_name: str, new_name: str):
         if rename_mindmap_file(old_mindmap_name=old_name, new_mindmap_name=new_name):
