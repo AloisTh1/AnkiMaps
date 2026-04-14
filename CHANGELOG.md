@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2.4.3 (2026-04-14)
+
+### Bug Fixes
+
+- Add lost mindmaps recovery notice
+  ([`eeb1cdf`](https://github.com/AloisTh1/AnkiMaps/commit/eeb1cdf0c820b4d72ee791fd9a093214bffc1e46))
+
+
 ## v2.4.2 (2026-04-14)
 
 ### Bug Fixes
