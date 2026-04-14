@@ -357,12 +357,20 @@ class LandingWindow(QDialog):
             self,
             "Lost Mindmaps",
             "I am deeply sorry if your mindmaps disappeared after updating AnkiMaps.\n\n"
-            "They may not be deleted. Please check these places:\n\n"
-            "1. Open your Anki add-ons folder and look for an 'AnkiMaps' folder.\n"
-            "2. Inside it, check: user_files/mindmaps\n"
-            "3. Also check your Recycle Bin / Trash for an 'AnkiMaps' folder.\n"
-            "4. If you find .db files there, those are your mindmaps.\n\n"
-            "Please do not empty your Trash until you have checked it.",
+            "They may not be deleted. They may still be in the old AnkiMaps folder or in your "
+            "Recycle Bin / Trash.\n\n"
+            "How to put them back:\n\n"
+            "1. Click 'Open Mindmap Folder' in this window. This opens the correct folder for "
+            "this installed version.\n"
+            "2. Keep that folder open. It should be named: user_files/mindmaps\n"
+            "3. In your Anki add-ons folder, look for an old 'AnkiMaps' folder and check: "
+            "AnkiMaps/user_files/mindmaps\n"
+            "4. Also check your Recycle Bin / Trash for an 'AnkiMaps' folder, then check: "
+            "AnkiMaps/user_files/mindmaps\n"
+            "5. Copy any .db files you find into the folder opened in step 1.\n"
+            "6. Restart Anki and open AnkiMaps again.\n\n"
+            "The .db files are your mindmaps. Please do not empty your Trash until you have "
+            "checked it.",
         )
 
     def _on_theme_changed(self, theme_name: str) -> None:
