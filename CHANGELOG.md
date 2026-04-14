@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2.4.1 (2026-04-14)
+
+### Bug Fixes
+
+- Read version from loaded addon manifest
+  ([`ffc0d19`](https://github.com/AloisTh1/AnkiMaps/commit/ffc0d19961e8341cfb82745118c0d2eefd4956da))
+
+
 ## v2.4.0 (2026-04-14)
 
 ### Features
