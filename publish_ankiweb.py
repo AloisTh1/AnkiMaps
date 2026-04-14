@@ -20,6 +20,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 
 PYPROJECT_FILENAME = "pyproject.toml"
 STATE_DIR = ".playwright-state"
@@ -27,6 +28,7 @@ STATE_FILE = os.path.join(STATE_DIR, "ankiweb_state.json")
 ANKIWEB_ADDONS_URL = "https://ankiweb.net/shared/addons"
 ANKIWEB_LOGIN_URL = "https://ankiweb.net/account/login"
 REPO = "AloisTh1/AnkiMaps"
+LOGIN_WAIT_SECONDS = 300
 
 
 def get_version() -> str:
@@ -172,7 +174,7 @@ def upload_to_ankiweb(addon_path: str, addon_id: str, *, force_login: bool) -> N
         page.goto(ANKIWEB_LOGIN_URL, wait_until="networkidle")
 
         print("Please log in to AnkiWeb in the browser window.")
-        input("Press Enter here once you are logged in...")
+        _wait_for_login(page)
 
         # Verify login succeeded
         page.goto(ANKIWEB_ADDONS_URL, wait_until="networkidle")
@@ -189,6 +191,23 @@ def upload_to_ankiweb(addon_path: str, addon_id: str, *, force_login: bool) -> N
         _do_upload(page, context, addon_path, addon_id)
         context.close()
         browser.close()
+
+
+def _wait_for_login(page) -> None:
+    prompt = "Press Enter here once you are logged in..."
+    try:
+        input(prompt)
+        return
+    except EOFError:
+        print(f"No interactive stdin available; waiting up to {LOGIN_WAIT_SECONDS} seconds for login...")
+
+    deadline = time.time() + LOGIN_WAIT_SECONDS
+    while time.time() < deadline:
+        if "/account/login" not in page.url:
+            return
+        page.wait_for_timeout(2000)
+
+    print("Login wait timed out; continuing with verification.")
 
 
 def _do_upload(page, context, addon_path: str, addon_id: str) -> None:

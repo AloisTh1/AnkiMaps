@@ -16,7 +16,6 @@ from .src.common.io import (
     create_backup,
     delete_mindmap_file,
     export_all_mindmaps,
-    get_anki_addon_path,
     get_mindmaps_storage_path,
     initialize_user_directories,
     rename_mindmap_file,
@@ -138,10 +137,7 @@ class MindMapAddon:
         self.landing_controller = None
 
     def _get_current_version(self) -> str:
-        addon_path = get_anki_addon_path()
-        if not addon_path:
-            return "unknown"
-
+        addon_path = os.path.dirname(__file__)
         manifest_path = os.path.join(addon_path, "manifest.json")
         try:
             with open(manifest_path, "r", encoding="utf-8") as manifest_file:
