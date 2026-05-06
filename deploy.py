@@ -60,7 +60,7 @@ if args.delete:
         print(f"Addon not found at {local_path}. Nothing to remove.")
 else:
     source_dir = "src"
-    files_to_copy = ["__init__.py", "README.md", "LICENSE.txt"]
+    files_to_copy = ["__init__.py", "README.md", "LICENSE.txt", "config.json"]
 
     os.makedirs(local_path, exist_ok=True)
 
@@ -70,6 +70,8 @@ else:
     shutil.copytree(source_dir, target_src_path)
 
     for file in files_to_copy:
+        if not os.path.exists(file):
+            raise FileNotFoundError(f"Required root file '{file}' was not found.")
         shutil.copy(file, local_path)
 
     manifest = {

@@ -17,7 +17,7 @@ PYPROJECT_FILENAME = "pyproject.toml"
 UTILS_FILE_PATH_IN_SRC = os.path.join(SRC_DIR, "common", "utils.py")
 BUILD_DIR = "build_pkg"
 DIST_DIR = "dist"
-FILES_TO_INCLUDE_IN_ROOT = ["LICENSE.txt", "README.md"]
+FILES_TO_INCLUDE_IN_ROOT = ["LICENSE.txt", "README.md", "config.json"]
 
 
 def get_version() -> str:
@@ -89,14 +89,14 @@ def create_anki_addon():
     )
     shutil.copy(ROOT_INIT, BUILD_DIR)
 
-    print("Including documentation files...")
+    print("Including root files...")
     for filename in FILES_TO_INCLUDE_IN_ROOT:
         source_path = filename
         target_path = os.path.join(BUILD_DIR, filename)
         if os.path.exists(source_path):
             shutil.copy(source_path, target_path)
         else:
-            print(f"WARNING: Documentation file '{source_path}' not found. Skipping.")
+            raise FileNotFoundError(f"Required root file '{source_path}' was not found.")
 
     source_logo = os.path.join(ASSETS_PACKAGING_DIR, DEFAULT_LOGO_FILENAME)
     target_logo = os.path.join(BUILD_DIR, TARGET_LOGO_PATH_IN_SRC)

@@ -55,6 +55,146 @@ MIN_ZOOM = 0.1
 MAX_ZOOM = 5.0
 
 
+def _window_colors(theme_mode: str) -> dict[str, str]:
+    if theme_mode.lower() == "dark":
+        return {
+            "panel": "#232629",
+            "panel_alt": "#2f3338",
+            "canvas": "#1f2023",
+            "border": "#4a4f57",
+            "text": "#f1f3f5",
+            "muted": "#aeb6bf",
+            "accent": "#4a90e2",
+            "accent_hover": "#2f5f97",
+            "accent_pressed": "#264d7a",
+            "disabled_bg": "#30343a",
+            "disabled_text": "#7f8790",
+            "slider_groove": "#4a4f57",
+            "scroll_handle": "#5b6470",
+        }
+    return {
+        "panel": "#ffffff",
+        "panel_alt": "#f5f7fa",
+        "canvas": "#ffffff",
+        "border": "#c0c0c0",
+        "text": "#1f2328",
+        "muted": "#6b7280",
+        "accent": "#4a90e2",
+        "accent_hover": "#f0f8ff",
+        "accent_pressed": "#dbeaff",
+        "disabled_bg": "#f5f5f5",
+        "disabled_text": "#a0a0a0",
+        "slider_groove": "#c9d0d8",
+        "scroll_handle": "#aeb6bf",
+    }
+
+
+def _window_stylesheet(colors: dict[str, str]) -> str:
+    return f"""
+    QWidget {{
+        background-color: {colors["canvas"]};
+        color: {colors["text"]};
+    }}
+    QWidget#menuPanel {{
+        background-color: {colors["panel"]};
+    }}
+    QWidget#rightContainer,
+    QWidget#zoomContainer {{
+        background-color: {colors["canvas"]};
+    }}
+    QLabel {{
+        color: {colors["text"]};
+    }}
+    QFrame {{
+        color: {colors["border"]};
+    }}
+    QPushButton {{
+        background-color: {colors["panel"]};
+        border: 2px solid {colors["accent"]};
+        border-radius: 6px;
+        padding: 6px;
+        color: {colors["accent"]};
+        font-weight: bold;
+        text-align: center;
+    }}
+    QPushButton:hover {{
+        background-color: {colors["accent_hover"]};
+    }}
+    QPushButton:pressed {{
+        background-color: {colors["accent_pressed"]};
+    }}
+    QPushButton:disabled {{
+        background-color: {colors["disabled_bg"]};
+        color: {colors["disabled_text"]};
+        border-color: {colors["border"]};
+    }}
+    QPushButton:checked {{
+        background-color: {colors["accent"]};
+        color: white;
+    }}
+    QLineEdit,
+    QSpinBox {{
+        background-color: {colors["panel_alt"]};
+        color: {colors["text"]};
+        border: 1px solid {colors["border"]};
+        border-radius: 4px;
+        padding: 4px;
+    }}
+    QSpinBox::up-button,
+    QSpinBox::down-button {{
+        background-color: {colors["panel"]};
+        border: 1px solid {colors["border"]};
+    }}
+    QSpinBox::up-arrow,
+    QSpinBox::down-arrow {{
+        width: 8px;
+        height: 8px;
+    }}
+    QSlider::groove:horizontal {{
+        height: 6px;
+        background: {colors["slider_groove"]};
+        border-radius: 3px;
+    }}
+    QSlider::handle:horizontal {{
+        width: 16px;
+        margin: -6px 0;
+        background: {colors["accent"]};
+        border: 1px solid {colors["border"]};
+        border-radius: 8px;
+    }}
+    QScrollBar:horizontal,
+    QScrollBar:vertical {{
+        background: {colors["panel"]};
+        border: 0;
+    }}
+    QScrollBar::handle:horizontal,
+    QScrollBar::handle:vertical {{
+        background: {colors["scroll_handle"]};
+        border: 0;
+        min-width: 28px;
+        min-height: 28px;
+    }}
+    QScrollBar::add-line,
+    QScrollBar::sub-line,
+    QScrollBar::add-page,
+    QScrollBar::sub-page {{
+        background: transparent;
+        border: 0;
+    }}
+    QMenu {{
+        background-color: {colors["panel"]};
+        color: {colors["text"]};
+        border: 1px solid {colors["border"]};
+    }}
+    QMenu::item:selected {{
+        background-color: {colors["accent_hover"]};
+    }}
+    QRadioButton {{
+        color: {colors["text"]};
+    }}
+    """
+
+
 class NonClosingCheckableAction(QWidgetAction):
     toggled = pyqtSignal(bool)
 
@@ -100,9 +240,11 @@ class MindMapWindow(QMainWindow):
         model: MindMap,
         log_buffer: list,
         buffer_handler: logging.Handler,
+        theme_mode: str = "Light",
     ):
         super().__init__(parent)
         self.mindmap_name = mindmap_name
+        self._theme_mode = theme_mode
         self._app_event_filter_installed = False
         self._last_shortcut_override_signature: Optional[tuple[object, object]] = None
 
@@ -127,6 +269,7 @@ class MindMapWindow(QMainWindow):
 
         # --- Left Panel ---
         menu_panel = QWidget()
+        menu_panel.setObjectName("menuPanel")
         menu_panel.setFixedWidth(220)
         menu_layout = QVBoxLayout(menu_panel)
         menu_layout.setContentsMargins(10, 10, 10, 10)
@@ -134,18 +277,8 @@ class MindMapWindow(QMainWindow):
         menu_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         main_layout.addWidget(menu_panel)
 
-        LOGO_BLUE = "#4a90e2"
-        button_style = f"""
-        QPushButton {{
-            background-color: white; border: 2px solid {LOGO_BLUE}; border-radius: 6px;
-            padding: 6px; color: {LOGO_BLUE}; font-weight: bold; text-align: center;
-        }}
-        QPushButton:hover {{ background-color: #f0f8ff; }}
-        QPushButton:pressed {{ background-color: #dbeaff; }}
-        QPushButton:disabled {{ background-color: #f5f5f5; color: #a0a0a0; border-color: #c0c0c0; }}
-        QPushButton:checked {{ background-color: {LOGO_BLUE}; color: white; }}
-        """
-        menu_panel.setStyleSheet(f"QWidget {{ background-color: white; }} {button_style}")
+        colors = _window_colors(self._theme_mode)
+        self.setStyleSheet(_window_stylesheet(colors))
 
         logo_label = QLabel()
         logo_path = os.path.join(os.path.dirname(__file__), "assets", "logo.png")
@@ -157,12 +290,13 @@ class MindMapWindow(QMainWindow):
 
         # --- Right Container (Map + Zoom) ---
         right_container = QWidget()
+        right_container.setObjectName("rightContainer")
         right_layout = QVBoxLayout(right_container)
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(0)
         main_layout.addWidget(right_container, 1)
 
-        self.mindmap_view = MindMapView(model, self)
+        self.mindmap_view = MindMapView(model, self, theme_mode=self._theme_mode)
         right_layout.addWidget(self.mindmap_view, 1)
 
         # --- Add Controls to Panels ---
@@ -574,6 +708,7 @@ class MindMapWindow(QMainWindow):
 
     def _add_zoom_controls(self, layout: QVBoxLayout):
         zoom_container = QWidget()
+        zoom_container.setObjectName("zoomContainer")
         zoom_layout = QHBoxLayout(zoom_container)
         zoom_layout.setContentsMargins(10, 2, 10, 2)
         zoom_layout.setSpacing(5)
@@ -693,10 +828,11 @@ class MindMapWindow(QMainWindow):
                 )
 
     def _update_color_button_style(self):
+        colors = _window_colors(self._theme_mode)
         self.color_button.setStyleSheet(
             f"""
             background-color: {self._current_connection_color};
-            color: black; font-weight: normal; border: 1px solid #777;
+            color: {colors["text"]}; font-weight: normal; border: 1px solid {colors["border"]};
             """
         )
 

@@ -99,12 +99,13 @@ class LandingWindow(QDialog):
         mindmap_names: list[str],
         mindmap_infos: dict[str, dict[str, Any]],
         addon_version: str,
+        theme_mode: str = "Light",
         parent=None,
     ):
         super().__init__(parent)
         self.addon_version = addon_version
         self.mindmap_infos = mindmap_infos
-        self._theme_mode = "Light"
+        self._theme_mode = theme_mode if theme_mode in THEMES else "Light"
         self.setWindowTitle("AnkiMaps")
         self.setObjectName("ankiMapsLanding")
         self.setMinimumWidth(400)
@@ -376,6 +377,9 @@ class LandingWindow(QDialog):
     def _on_theme_changed(self, theme_name: str) -> None:
         self._theme_mode = theme_name
         self._apply_site_palette()
+
+    def theme_mode(self) -> str:
+        return self._theme_mode
 
     def _apply_site_palette(self) -> None:
         c = THEMES.get(self._theme_mode, DARK_THEME)
