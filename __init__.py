@@ -45,6 +45,10 @@ log_buffer: list[LogRecord] = []
 buffer_handler = ListLogHandler(log_buffer)
 addon_logger.addHandler(buffer_handler)
 
+CONFIG_THEME_MODE_KEY = "theme_mode"
+DEFAULT_THEME_MODE = "Light"
+VALID_THEME_MODES = {"Dark", "Light"}
+
 
 def startup_cleanup():
     initialize_user_directories()
@@ -119,7 +123,13 @@ class MindMapAddon:
         mindmap_names, mindmap_infos = self.landing_controller.get_mindmaps_with_info()
 
         current_version = self._get_current_version()
-        self.landing_dialog = LandingWindow(mindmap_names, mindmap_infos, current_version, mw)
+        self.landing_dialog = LandingWindow(
+            mindmap_names,
+            mindmap_infos,
+            current_version,
+            theme_mode=self._get_theme_mode(),
+            parent=mw,
+        )
 
         self.landing_dialog.delete_requested.connect(self._on_delete_map_requested)
         self.landing_dialog.rename_requested.connect(self._on_rename_map_requested)
@@ -131,10 +141,34 @@ class MindMapAddon:
         self.landing_dialog.export_bundle_requested.connect(self._on_export_bundle_requested)
         self.landing_dialog.import_bundle_requested.connect(self._on_import_bundle_requested)
 
-        if self.landing_dialog.exec() == QDialog.DialogCode.Accepted and self.landing_dialog.selected_map:
+        dialog_result = self.landing_dialog.exec()
+        selected_theme = self.landing_dialog.theme_mode()
+        self._set_theme_mode(selected_theme)
+
+        if dialog_result == QDialog.DialogCode.Accepted and self.landing_dialog.selected_map:
             self._launch_mindmap_window(self.landing_dialog.selected_map)
         self.landing_dialog = None
         self.landing_controller = None
+
+    def _get_config(self) -> dict:
+        if not mw:
+            return {}
+        config = mw.addonManager.getConfig(__name__)
+        return config if isinstance(config, dict) else {}
+
+    def _write_config(self, config: dict) -> None:
+        if mw:
+            mw.addonManager.writeConfig(__name__, config)
+
+    def _get_theme_mode(self) -> str:
+        raw_theme = str(self._get_config().get(CONFIG_THEME_MODE_KEY, DEFAULT_THEME_MODE))
+        return raw_theme if raw_theme in VALID_THEME_MODES else DEFAULT_THEME_MODE
+
+    def _set_theme_mode(self, theme_mode: str) -> None:
+        normalized = theme_mode if theme_mode in VALID_THEME_MODES else DEFAULT_THEME_MODE
+        config = self._get_config()
+        config[CONFIG_THEME_MODE_KEY] = normalized
+        self._write_config(config)
 
     def _get_current_version(self) -> str:
         addon_path = os.path.dirname(__file__)
@@ -360,6 +394,7 @@ class MindMapAddon:
                     model=model,
                     log_buffer=log_buffer,
                     buffer_handler=buffer_handler,
+                    theme_mode=self._get_theme_mode(),
                 )
 
                 qconnect(self._view.window_closed, self._on_window_closed)

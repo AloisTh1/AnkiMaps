@@ -39,6 +39,28 @@ if TYPE_CHECKING:
 logger = logging.getLogger(ANKIMAPS_CONSTANTS.ADD_ON_NAME.value)
 
 
+def _note_colors(theme_mode: str) -> dict[str, QColor]:
+    if theme_mode.lower() == "dark":
+        return {
+            "card": QColor("#2b2f35"),
+            "card_review": QColor("#23334d"),
+            "text": QColor("#f1f3f5"),
+            "pen": QColor("#6f7782"),
+            "pen_review": QColor("#75a7ff"),
+            "lod": QColor("#3a3f46"),
+            "handle": QColor("#aeb6bf"),
+        }
+    return {
+        "card": QColor(Qt.GlobalColor.white),
+        "card_review": QColor("#E0E8FF"),
+        "text": QColor(Qt.GlobalColor.black),
+        "pen": QColor(Qt.GlobalColor.black),
+        "pen_review": QColor(Qt.GlobalColor.blue),
+        "lod": QColor(Qt.GlobalColor.darkGray),
+        "handle": QColor("#888888"),
+    }
+
+
 class NoteSignals(QObject):
     note_double_clicked = pyqtSignal(str)
     note_resized = pyqtSignal(str, float)
@@ -47,10 +69,11 @@ class NoteSignals(QObject):
 class MindMapNoteView(QGraphicsObject):
     """Graphics item that shows an Anki note inside the mind‑map."""
 
-    def __init__(self, mindmap_node: MindMapNode):
+    def __init__(self, mindmap_node: MindMapNode, theme_mode: str = "Light"):
         super().__init__()
 
         self.mindmap_node = mindmap_node
+        self._theme_mode = theme_mode
         self.note_id = mindmap_node.note_id
         self.signals = NoteSignals()
         self.state: NoteState = NoteState.NORMAL
@@ -166,7 +189,15 @@ class MindMapNoteView(QGraphicsObject):
         doc_width = width - (2 * inner_padding)
         self.document.setTextWidth(doc_width)
         note_type = note.note_type() or {}
-        self.document.setDefaultStyleSheet(note_type.get("css", ""))
+        colors = _note_colors(self._theme_mode)
+        note_css = note_type.get("css", "")
+        if self._theme_mode.lower() == "dark":
+            note_css = (
+                f"* {{ color: {colors['text'].name()} !important; }}\n"
+                f"body, table, td, th, div, span, p {{ color: {colors['text'].name()} !important; }}\n"
+                "a { color: #75a7ff !important; }\n" + note_css
+            )
+        self.document.setDefaultStyleSheet(note_css)
         if mw and mw.col and (media_dir := mw.col.media.dir()):
             base_url = QUrl.fromLocalFile(os.path.join(media_dir, ""))
             self.document.setMetaInformation(QTextDocument.MetaInformation.DocumentUrl, base_url.toString())
@@ -179,6 +210,8 @@ class MindMapNoteView(QGraphicsObject):
         )
         image_width = max(available_width - 10, 10)
         final_html = re.sub(r"<img", f'<img width="{image_width}"', html_with_tables, flags=re.IGNORECASE)
+        if self._theme_mode.lower() == "dark":
+            final_html = f'<div style="color: {colors["text"].name()};">{final_html}</div>'
         self.document.setHtml(final_html)
         doc_height = self.document.size().height()
         self.setRect(0, 0, width, doc_height + (2 * inner_padding))
@@ -196,8 +229,9 @@ class MindMapNoteView(QGraphicsObject):
                 line.update_position()
 
     def paint(self, painter: QPainter, option, widget=None):
+        colors = _note_colors(self._theme_mode)
         if self._lod_mode_active:
-            painter.setBrush(QColor(Qt.GlobalColor.darkGray))
+            painter.setBrush(colors["lod"])
             no_pen = QPen()
             no_pen.setStyle(Qt.PenStyle.NoPen)
             painter.setPen(no_pen)
@@ -211,12 +245,12 @@ class MindMapNoteView(QGraphicsObject):
             return
 
         if NoteState.REVIEW_ACTIVE in self.state:
-            base_brush = QBrush(QColor("#E0E8FF"))
-            base_pen = QPen(Qt.GlobalColor.blue, 4)
+            base_brush = QBrush(colors["card_review"])
+            base_pen = QPen(colors["pen_review"], 4)
             self.setZValue(1)
         else:
-            base_brush = QBrush(Qt.GlobalColor.white)
-            base_pen = QPen(Qt.GlobalColor.black, 1)
+            base_brush = QBrush(colors["card"])
+            base_pen = QPen(colors["pen"], 1)
             self.setZValue(0)
 
         painter.setBrush(base_brush)
@@ -239,7 +273,7 @@ class MindMapNoteView(QGraphicsObject):
             painter.drawRect(self.boundingRect())
 
         handle_rect = self._get_resize_handle_rect()
-        handle_pen = QPen(QColor("#888888"), 1.5)
+        handle_pen = QPen(colors["handle"], 1.5)
         painter.setPen(handle_pen)
         painter.drawLine(handle_rect.bottomLeft() + QPointF(5, 0), handle_rect.topRight() + QPointF(0, 5))
         painter.drawLine(handle_rect.bottomLeft() + QPointF(10, 0), handle_rect.topRight() + QPointF(0, 10))

@@ -43,6 +43,10 @@ from .nodes.states import NoteState
 logger = logging.getLogger(ANKIMAPS_CONSTANTS.ADD_ON_NAME.value)
 
 
+def _scene_background_color(theme_mode: str) -> QColor:
+    return QColor("#1f2023" if theme_mode.lower() == "dark" else "#ffffff")
+
+
 class FastDragProxyItem(QGraphicsObject):
     """
     Visual proxy for dragging many items (without it the UI freezes).
@@ -92,9 +96,10 @@ class MindMapView(QGraphicsView):
 
     DRAG_PROXY_THRESHOLD = 50
 
-    def __init__(self, model: MindMap, parent=None):
+    def __init__(self, model: MindMap, parent=None, theme_mode: str = "Light"):
         super().__init__(parent)
         self.model = model
+        self._theme_mode = theme_mode
         self.quadtree = Quadtree(QRectF())
 
         self._all_view_items: dict[NoteId, MindMapNoteView] = {}
@@ -102,6 +107,9 @@ class MindMapView(QGraphicsView):
         self._currently_visible_ids: set[NoteId] = set()
 
         self.setScene(QGraphicsScene(self))
+        scene_color = _scene_background_color(self._theme_mode)
+        self.scene().setBackgroundBrush(QBrush(scene_color))
+        self.setStyleSheet(f"background: {scene_color.name()}; border: 0;")
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setDragMode(QGraphicsView.DragMode.RubberBandDrag)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
@@ -348,6 +356,7 @@ class MindMapView(QGraphicsView):
         start_time = time.time()
         logger.info("View: Full model reload requested. Swapping scene...")
         new_scene = QGraphicsScene(self)
+        new_scene.setBackgroundBrush(QBrush(_scene_background_color(self._theme_mode)))
         self._all_view_items.clear()
         self._all_lines.clear()
         new_scene.addItem(self._center_logo_item)
@@ -417,7 +426,7 @@ class MindMapView(QGraphicsView):
         self._currently_visible_ids = visible_ids
 
     def _add_note_item_to_scene(self, node_data: MindMapNode, scene: QGraphicsScene):
-        view_item = MindMapNoteView(node_data)
+        view_item = MindMapNoteView(node_data, theme_mode=self._theme_mode)
         view_item.setPos(node_data.x, node_data.y)
         scene.addItem(view_item)
         view_item.signals.note_double_clicked.connect(self.note_double_clicked)

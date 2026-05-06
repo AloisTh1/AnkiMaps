@@ -70,7 +70,10 @@ class StickyLine(QGraphicsLineItem):
         font = self.label_item.font()
         font.setPointSizeF(label_size)
         self.label_item.setFont(font)
-        self.label_item.setDefaultTextColor(QColor("black"))
+        label_color = QColor("#f1f3f5")
+        if from_node and getattr(from_node, "_theme_mode", "Light").lower() != "dark":
+            label_color = QColor("black")
+        self.label_item.setDefaultTextColor(label_color)
         self.label_item.setZValue(0)
 
         pen_color = QColor(color)
@@ -236,7 +239,20 @@ class StickyLine(QGraphicsLineItem):
 
     def _show_context_menu(self, screen_pos: QPoint):
         try:
+            from_node = self.from_node
+            to_node = self.to_node
             menu = QMenu()
+            if from_node and getattr(from_node, "_theme_mode", "Light").lower() == "dark":
+                menu.setStyleSheet("""
+                    QMenu {
+                        background-color: #232629;
+                        color: #f1f3f5;
+                        border: 1px solid #4a4f57;
+                    }
+                    QMenu::item:selected {
+                        background-color: #2f5f97;
+                    }
+                """)
 
             edit_action = menu.addAction("Add/Edit Label")
             edit_action.triggered.connect(lambda: self.signals.label_edit_requested.emit(self))
@@ -248,8 +264,6 @@ class StickyLine(QGraphicsLineItem):
             menu.addSeparator()
 
             delete_action = menu.addAction("Delete Connection")
-            from_node = self.from_node
-            to_node = self.to_node
 
             if from_node and to_node:
                 delete_action.triggered.connect(
