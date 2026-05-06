@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2.4.5 (2026-05-06)
+
+### Bug Fixes
+
+- Persist dark mode styling
+  ([`5239d6c`](https://github.com/AloisTh1/AnkiMaps/commit/5239d6c4c74bd1aa83a83c95eb784ec24eb8edf7))
+
+
 ## v2.4.4 (2026-04-14)
 
 ### Bug Fixes
