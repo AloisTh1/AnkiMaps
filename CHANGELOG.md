@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2.5.0 (2026-05-24)
+
+### Features
+
+- Add cloze blur toggle
+  ([`0ac726b`](https://github.com/AloisTh1/AnkiMaps/commit/0ac726b31755b7c11daef4452e81255c11fe930c))
+
+
 ## v2.4.5 (2026-05-06)
 
 ### Bug Fixes
