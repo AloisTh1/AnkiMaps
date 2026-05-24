@@ -78,6 +78,8 @@ LIGHT_THEME = {
 
 THEMES = {"Dark": DARK_THEME, "Light": LIGHT_THEME}
 
+NEWS_ITEMS = ("News box: show release notes and important notices from the main menu.",)
+
 
 class LandingWindow(QDialog):
     delete_requested = pyqtSignal(str)
@@ -178,6 +180,12 @@ class LandingWindow(QDialog):
         self.theme_selector.setCurrentText(self._theme_mode)
         header_controls.addWidget(self.theme_selector)
 
+        self.show_news_button = QPushButton("Show News")
+        self.show_news_button.setObjectName("btn_show_news")
+        self.show_news_button.setCheckable(True)
+        self.show_news_button.setChecked(False)
+        header_controls.addWidget(self.show_news_button)
+
         self.support_button = QPushButton("Support")
         self.support_button.setObjectName("btn_support")
         header_controls.addWidget(self.support_button)
@@ -186,9 +194,21 @@ class LandingWindow(QDialog):
         header_layout.addLayout(header_right)
         self.layout.addLayout(header_layout)
 
+        self.news_label = QLabel(self._format_news_text())
+        self.news_label.setObjectName("news_label")
+        self.news_label.setWordWrap(True)
+
         self.lost_mindmaps_button = QPushButton("READ THIS IF YOU LOST YOUR MINDMAPS !")
         self.lost_mindmaps_button.setObjectName("btn_lost_mindmaps")
-        self.layout.addWidget(self.lost_mindmaps_button)
+
+        self.news_group = QGroupBox("News")
+        news_layout = QVBoxLayout()
+        news_layout.setSpacing(8)
+        news_layout.addWidget(self.lost_mindmaps_button)
+        news_layout.addWidget(self.news_label)
+        self.news_group.setLayout(news_layout)
+        self.news_group.setVisible(False)
+        self.layout.addWidget(self.news_group)
 
         self.mindmap_names = list(mindmap_names)
         self.sort_options: dict[str, tuple[str, bool]] = {
@@ -327,6 +347,7 @@ class LandingWindow(QDialog):
         self.open_folder_button.clicked.connect(self.open_folder_requested.emit)
         self.export_all_button.clicked.connect(self.export_all_requested.emit)
         self.theme_selector.currentTextChanged.connect(self._on_theme_changed)
+        self.show_news_button.toggled.connect(self._on_show_news_toggled)
         self.support_button.clicked.connect(self._on_support_clicked)
         self.lost_mindmaps_button.clicked.connect(self._on_lost_mindmaps_clicked)
 
@@ -441,6 +462,12 @@ class LandingWindow(QDialog):
                 color: {c["muted"]};
                 font-size: 11px;
                 padding: 2px 2px 0 2px;
+            }}
+
+            {d} QLabel#news_label {{
+                color: {c["muted"]};
+                font-size: 12px;
+                line-height: 1.4;
             }}
 
             {d} QLabel#footer_label {{
@@ -568,6 +595,12 @@ class LandingWindow(QDialog):
                 min-width: 78px;
             }}
 
+            {d} QPushButton#btn_show_news {{
+                padding: 5px 12px;
+                font-size: 12px;
+                min-width: 92px;
+            }}
+
             {d} QPushButton#btn_lost_mindmaps {{
                 background: #dc2626;
                 border: 1px solid #991b1b;
@@ -663,6 +696,15 @@ class LandingWindow(QDialog):
     def set_version(self, addon_version: str):
         self.addon_version = addon_version
         self.version_label.setText(f"Version: {self.addon_version}")
+        self.news_label.setText(self._format_news_text())
+
+    def _format_news_text(self) -> str:
+        items = "\n".join(f"- {item}" for item in NEWS_ITEMS)
+        return f"{self.addon_version}\n{items}"
+
+    def _on_show_news_toggled(self, checked: bool) -> None:
+        self.news_group.setVisible(checked)
+        self.show_news_button.setText("Hide News" if checked else "Show News")
 
     def update_mindmaps(
         self,
