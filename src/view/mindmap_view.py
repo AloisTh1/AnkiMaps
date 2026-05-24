@@ -133,6 +133,7 @@ class MindMapView(QGraphicsView):
         self._fast_drag_proxy: Optional[FastDragProxyItem] = None
         self._search_highlighted_ids: set[NoteId] = set()
         self._review_active_nid: Optional[NoteId] = None
+        self._cloze_blur_enabled = False
 
         self._center_logo_item = CenterLogoItem()
 
@@ -427,6 +428,7 @@ class MindMapView(QGraphicsView):
 
     def _add_note_item_to_scene(self, node_data: MindMapNode, scene: QGraphicsScene):
         view_item = MindMapNoteView(node_data, theme_mode=self._theme_mode)
+        view_item.set_cloze_blur_enabled(self._cloze_blur_enabled)
         view_item.setPos(node_data.x, node_data.y)
         scene.addItem(view_item)
         view_item.signals.note_double_clicked.connect(self.note_double_clicked)
@@ -632,6 +634,22 @@ class MindMapView(QGraphicsView):
                     item.set_state(item.state & ~NoteState.REVIEW_BLURRED)
                 else:
                     item.set_state(item.state | NoteState.REVIEW_BLURRED)
+
+    def set_cloze_blur_enabled(self, enabled: bool):
+        if self._cloze_blur_enabled == enabled:
+            return
+
+        self._cloze_blur_enabled = enabled
+        geometry_changed = False
+        for item in self._all_view_items.values():
+            old_rect = item.boundingRect()
+            item.set_cloze_blur_enabled(enabled)
+            if old_rect != item.boundingRect():
+                geometry_changed = True
+
+        if geometry_changed:
+            self.rebuild_quadtree()
+        self._request_update()
 
     def contextMenuEvent(self, event: QGraphicsSceneContextMenuEvent):
         """Shows a context menu for selected notes."""

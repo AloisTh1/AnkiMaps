@@ -1,3 +1,4 @@
+import html
 import logging
 import os
 import re
@@ -38,6 +39,8 @@ if TYPE_CHECKING:
     from ..edges.edges import StickyLine
 logger = logging.getLogger(ANKIMAPS_CONSTANTS.ADD_ON_NAME.value)
 
+CLOZE_RE = re.compile(r"\{\{c\d+::(.*?)\}\}", re.DOTALL)
+
 
 def _note_colors(theme_mode: str) -> dict[str, QColor]:
     if theme_mode.lower() == "dark":
@@ -61,6 +64,31 @@ def _note_colors(theme_mode: str) -> dict[str, QColor]:
     }
 
 
+def _blur_clozes(html_content: str, theme_mode: str) -> str:
+    if theme_mode.lower() == "dark":
+        fill = "#66717d"
+        border = "#7d8792"
+    else:
+        fill = "#d7dce2"
+        border = "#b7c0ca"
+
+    def replacement(match: re.Match[str]) -> str:
+        payload = match.group(1)
+        text = html.unescape(re.sub(r"<[^>]+>", "", payload))
+        block_len = min(max(len(text.strip()), 4), 28)
+        blank = "&nbsp;" * block_len
+        return (
+            f'<span style="background-color: {fill}; color: {fill}; '
+            f'border: 1px solid {border};">{blank}</span>'
+        )
+
+    try:
+        return CLOZE_RE.sub(replacement, html_content)
+    except Exception as exc:
+        logger.warning("Failed to blur clozes for note content: %s", exc)
+        return html_content
+
+
 class NoteSignals(QObject):
     note_double_clicked = pyqtSignal(str)
     note_resized = pyqtSignal(str, float)
@@ -77,6 +105,7 @@ class MindMapNoteView(QGraphicsObject):
         self.note_id = mindmap_node.note_id
         self.signals = NoteSignals()
         self.state: NoteState = NoteState.NORMAL
+        self._cloze_blur_enabled = False
 
         self.sticky_lines: Set[weakref.ReferenceType["StickyLine"]] = set()
 
@@ -147,6 +176,12 @@ class MindMapNoteView(QGraphicsObject):
         self._lod_mode_active = active
         self.update()
 
+    def set_cloze_blur_enabled(self, enabled: bool):
+        if self._cloze_blur_enabled == enabled:
+            return
+        self._cloze_blur_enabled = enabled
+        self.update_size()
+
     def rect(self) -> QRectF:
         return self._rect
 
@@ -203,6 +238,8 @@ class MindMapNoteView(QGraphicsObject):
             self.document.setMetaInformation(QTextDocument.MetaInformation.DocumentUrl, base_url.toString())
         content = [note.fields[i] for i in indices if 0 <= i < len(note.fields)]
         html_content = "<hr>".join(content) if content else "(Empty)"
+        if self._cloze_blur_enabled:
+            html_content = _blur_clozes(html_content, self._theme_mode)
         clean_html = re.sub(r'(<(table|img)[^>]*?)\s+width="[^"]*"', r"\1", html_content, flags=re.IGNORECASE)
         available_width = max(int(doc_width), 10)
         html_with_tables = re.sub(

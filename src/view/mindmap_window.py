@@ -259,6 +259,7 @@ class MindMapWindow(QMainWindow):
         self._fields_menu_note_id: Optional[NoteId] = None
         self._selection_order = []
         self._is_editing_connection = False
+        self.cloze_blur_button: Optional[QPushButton] = None
         self.peek_button: Optional[QPushButton] = None
 
         central_widget = QWidget()
@@ -445,6 +446,14 @@ class MindMapWindow(QMainWindow):
             checked=True,
             passes_checked=True,
         )
+        self.cloze_blur_action = self._create_action(
+            "Blur Clozes",
+            "b",
+            self._on_cloze_blur_toggled,
+            checkable=True,
+            checked=False,
+            passes_checked=True,
+        )
         self.fields_action = self._create_action("Show Fields", "f", self._on_fields_shortcut)
 
         self.addActions(
@@ -461,6 +470,7 @@ class MindMapWindow(QMainWindow):
                 self.toggle_grid_action,
                 self.reset_action,
                 self.export_action,
+                self.cloze_blur_action,
                 self.fields_action,
             ]
         )
@@ -682,6 +692,10 @@ class MindMapWindow(QMainWindow):
     def _add_view_controls(self, layout: QVBoxLayout):
         self.fields_menu = QMenu(self)
 
+        self.cloze_blur_button = self._create_action_button(self.cloze_blur_action)
+        self.cloze_blur_button.setToolTip("Hide or reveal cloze answers in map cards")
+        layout.addWidget(self.cloze_blur_button)
+
         self.peek_button = QPushButton("Peek (P)")
         self.peek_button.setToolTip("Hold to temporarily unblur notes in the current view")
         self.peek_button.pressed.connect(lambda: self.mindmap_view.toggle_blur_for_visible_notes(True))
@@ -770,6 +784,9 @@ class MindMapWindow(QMainWindow):
         if self.mindmap_view and hasattr(self.mindmap_view, "_center_logo_item"):
             self.mindmap_view._center_logo_item.setVisible(checked)
             # self.mindmap_view._coordinate_grid.setVisible(checked)
+
+    def _on_cloze_blur_toggled(self, checked: bool):
+        self.mindmap_view.set_cloze_blur_enabled(checked)
 
     def _on_link_notes_button_clicked(self):
         if len(self._selection_order) != 2:
