@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2.6.0 (2026-05-24)
+
+### Features
+
+- Add news box to landing page
+  ([`b78132d`](https://github.com/AloisTh1/AnkiMaps/commit/b78132da18a761a73855e0ce2b653b9ebff0d488))
+
+
 ## v2.5.0 (2026-05-24)
 
 ### Features
