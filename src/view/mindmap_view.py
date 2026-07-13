@@ -37,6 +37,7 @@ from ..model.mindmap import MindMap
 from ..model.node import MindMapNode
 from .edges.edges import StickyLine
 from .items.center_point import CenterLogoItem
+from .mathjax_renderer import MathJaxRenderer
 from .nodes.notes import MindMapNoteView
 from .nodes.states import NoteState
 
@@ -101,6 +102,7 @@ class MindMapView(QGraphicsView):
         self.model = model
         self._theme_mode = theme_mode
         self.quadtree = Quadtree(QRectF())
+        self.mathjax_renderer = MathJaxRenderer(self)
 
         self._all_view_items: dict[NoteId, MindMapNoteView] = {}
         self._all_lines: dict[frozenset[NoteId], StickyLine] = {}
@@ -141,6 +143,11 @@ class MindMapView(QGraphicsView):
         self.update_timer.setInterval(100)
         self.update_timer.setSingleShot(True)
         self.update_timer.timeout.connect(self._update_visibility)
+
+        self._geometry_update_timer = QTimer(self)
+        self._geometry_update_timer.setInterval(25)
+        self._geometry_update_timer.setSingleShot(True)
+        self._geometry_update_timer.timeout.connect(self._finish_async_geometry_update)
 
         self.model.model_loaded.connect(self.on_full_model_load)
         self.model.nodes_added.connect(self.on_nodes_added)
@@ -427,12 +434,17 @@ class MindMapView(QGraphicsView):
         self._currently_visible_ids = visible_ids
 
     def _add_note_item_to_scene(self, node_data: MindMapNode, scene: QGraphicsScene):
-        view_item = MindMapNoteView(node_data, theme_mode=self._theme_mode)
+        view_item = MindMapNoteView(
+            node_data,
+            theme_mode=self._theme_mode,
+            mathjax_renderer=self.mathjax_renderer,
+        )
         view_item.set_cloze_blur_enabled(self._cloze_blur_enabled)
         view_item.setPos(node_data.x, node_data.y)
         scene.addItem(view_item)
         view_item.signals.note_double_clicked.connect(self.note_double_clicked)
         view_item.signals.note_resized.connect(self.note_resized)
+        view_item.signals.geometry_changed.connect(self._on_async_geometry_changed)
         self._all_view_items[node_data.note_id] = view_item
         view_item.set_lod_mode(self._is_lod_mode)
         view_item.setVisible(False)
@@ -499,6 +511,16 @@ class MindMapView(QGraphicsView):
             scene.setSceneRect(self.quadtree.boundary)
             for node_id, view_item in self._all_view_items.items():
                 self.quadtree.insert((node_id, view_item.sceneBoundingRect()))
+
+    def _on_async_geometry_changed(self, _note_id: str):
+        self._geometry_update_timer.start()
+
+    def _finish_async_geometry_update(self):
+        self.rebuild_quadtree()
+        self._request_update()
+
+    def cleanup(self):
+        self.mathjax_renderer.shutdown()
 
     def on_connection_added(self, conn_data: MindMapConnection):
         if scene := self.scene():

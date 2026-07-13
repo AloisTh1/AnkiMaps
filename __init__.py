@@ -29,6 +29,10 @@ from .src.view.landing_page import LandingWindow
 from .src.view.mindmap_window import MindMapWindow
 
 
+if mw:
+    mw.addonManager.setWebExports(__name__, r"src/view/assets/mathjax/.*\.js")
+
+
 class ListLogHandler(logging.Handler):
     def __init__(self, log_list: list, *args, **kwargs):
         super().__init__(*args, **kwargs)

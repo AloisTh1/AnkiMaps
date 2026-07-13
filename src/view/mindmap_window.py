@@ -1186,6 +1186,7 @@ class MindMapWindow(QMainWindow):
         if self._app_event_filter_installed and (app := QApplication.instance()):
             app.removeEventFilter(self)
             self._app_event_filter_installed = False
+        self.mindmap_view.cleanup()
         self.window_closed.emit()
         super().closeEvent(event)
 
