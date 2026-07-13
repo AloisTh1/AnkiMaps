@@ -2,6 +2,30 @@
 
 <!-- version list -->
 
+## v2.7.0 (2026-07-13)
+
+### Bug Fixes
+
+- Handle filtered deck build errors
+  ([`a700126`](https://github.com/AloisTh1/AnkiMaps/commit/a700126d7303df87a0cc4fcc36d59acc101ffb78))
+
+### Documentation
+
+- Add repository contributor guidelines
+  ([`7f279fa`](https://github.com/AloisTh1/AnkiMaps/commit/7f279faacd683d5523dee41e64e92215944db995))
+
+### Features
+
+- Make map deletions undoable
+  ([`a086a6f`](https://github.com/AloisTh1/AnkiMaps/commit/a086a6fd51231c6e118e1fda9514815097ab9fed))
+
+- Render MathJax in mind map notes
+  ([`edd596a`](https://github.com/AloisTh1/AnkiMaps/commit/edd596abc9dda0615db6ccacd1c93dfa68a7b26e))
+
+- Show release notes after updates
+  ([`4f27090`](https://github.com/AloisTh1/AnkiMaps/commit/4f270904d59d97b85fbd07e5075ea612c69f4303))
+
+
 ## v2.6.0 (2026-05-24)
 
 ### Features
