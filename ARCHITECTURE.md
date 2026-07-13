@@ -101,5 +101,6 @@ Backups are stored under:
 - Included root docs in package:
   - `README.md`
   - `LICENSE.txt`
+  - `CHANGELOG.md`
 
 `ARCHITECTURE.md` is repository-only documentation and is not packaged.

@@ -60,7 +60,7 @@ if args.delete:
         print(f"Addon not found at {local_path}. Nothing to remove.")
 else:
     source_dir = "src"
-    files_to_copy = ["__init__.py", "README.md", "LICENSE.txt", "config.json"]
+    files_to_copy = ["__init__.py", "README.md", "LICENSE.txt", "CHANGELOG.md", "config.json"]
 
     os.makedirs(local_path, exist_ok=True)
 

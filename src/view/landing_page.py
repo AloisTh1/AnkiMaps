@@ -78,8 +78,6 @@ LIGHT_THEME = {
 
 THEMES = {"Dark": DARK_THEME, "Light": LIGHT_THEME}
 
-NEWS_ITEMS = ("News box: show release notes and important notices from the main menu.",)
-
 
 class LandingWindow(QDialog):
     delete_requested = pyqtSignal(str)
@@ -101,11 +99,14 @@ class LandingWindow(QDialog):
         mindmap_names: list[str],
         mindmap_infos: dict[str, dict[str, Any]],
         addon_version: str,
+        news_text: str,
+        show_news_on_open: bool = False,
         theme_mode: str = "Light",
         parent=None,
     ):
         super().__init__(parent)
         self.addon_version = addon_version
+        self.news_text = news_text
         self.mindmap_infos = mindmap_infos
         self._theme_mode = theme_mode if theme_mode in THEMES else "Light"
         self.setWindowTitle("AnkiMaps")
@@ -183,7 +184,8 @@ class LandingWindow(QDialog):
         self.show_news_button = QPushButton("Show News")
         self.show_news_button.setObjectName("btn_show_news")
         self.show_news_button.setCheckable(True)
-        self.show_news_button.setChecked(False)
+        self.show_news_button.setChecked(show_news_on_open)
+        self.show_news_button.setText("Hide News" if show_news_on_open else "Show News")
         header_controls.addWidget(self.show_news_button)
 
         self.support_button = QPushButton("Support")
@@ -207,7 +209,7 @@ class LandingWindow(QDialog):
         news_layout.addWidget(self.lost_mindmaps_button)
         news_layout.addWidget(self.news_label)
         self.news_group.setLayout(news_layout)
-        self.news_group.setVisible(False)
+        self.news_group.setVisible(show_news_on_open)
         self.layout.addWidget(self.news_group)
 
         self.mindmap_names = list(mindmap_names)
@@ -696,11 +698,13 @@ class LandingWindow(QDialog):
     def set_version(self, addon_version: str):
         self.addon_version = addon_version
         self.version_label.setText(f"Version: {self.addon_version}")
+
+    def set_news_text(self, news_text: str):
+        self.news_text = news_text
         self.news_label.setText(self._format_news_text())
 
     def _format_news_text(self) -> str:
-        items = "\n".join(f"- {item}" for item in NEWS_ITEMS)
-        return f"{self.addon_version}\n{items}"
+        return self.news_text
 
     def _on_show_news_toggled(self, checked: bool) -> None:
         self.news_group.setVisible(checked)
