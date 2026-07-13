@@ -1,10 +1,11 @@
 import sqlite3
 from dataclasses import dataclass
 
-from anki.notes import NoteId
+from anki.notes import Note, NoteId
 
 from ..model.connections import CONNECTION_TYPES, MindMapConnection
 from ..model.mindmap import MindMap
+from ..model.node import MindMapNode
 from ..repository.db.sql_repository import SqlLiteRepository
 from .history_manager import HistoryCommand
 
@@ -20,6 +21,40 @@ class _ConnectionSnapshot:
     label_size: int
 
 
+@dataclass(frozen=True)
+class _NodeSnapshot:
+    note_id: NoteId
+    anki_note: Note
+    x: float
+    y: float
+    width: float
+    shown_field_indices: tuple[int, ...]
+    font_size: float
+
+    @classmethod
+    def from_node(cls, node: MindMapNode) -> "_NodeSnapshot":
+        return cls(
+            note_id=node.note_id,
+            anki_note=node.anki_note,
+            x=node.x,
+            y=node.y,
+            width=node.width,
+            shown_field_indices=tuple(node.shown_field_indices),
+            font_size=node.font_size,
+        )
+
+    def to_node(self) -> MindMapNode:
+        return MindMapNode(
+            note_id=self.note_id,
+            anki_note=self.anki_note,
+            x=self.x,
+            y=self.y,
+            width=self.width,
+            shown_field_indices=list(self.shown_field_indices),
+            font_size=self.font_size,
+        )
+
+
 def _snapshot_from_connection(connection: MindMapConnection) -> _ConnectionSnapshot:
     return _ConnectionSnapshot(
         from_note_id=connection.from_note_id,
@@ -30,6 +65,85 @@ def _snapshot_from_connection(connection: MindMapConnection) -> _ConnectionSnaps
         label=connection.label,
         label_size=connection.label_size,
     )
+
+
+def _connection_from_snapshot(snapshot: _ConnectionSnapshot) -> MindMapConnection:
+    return MindMapConnection(
+        connection_id=-1,
+        from_note_id=snapshot.from_note_id,
+        to_note_id=snapshot.to_note_id,
+        connection_type=CONNECTION_TYPES(snapshot.connection_type),
+        color=snapshot.color,
+        size=snapshot.size,
+        label=snapshot.label,
+        label_size=snapshot.label_size,
+    )
+
+
+class DeleteNodesCommand(HistoryCommand):
+    def __init__(
+        self,
+        sql_repository: SqlLiteRepository,
+        db_connection: sqlite3.Connection,
+        model: MindMap,
+        note_ids: list[NoteId],
+    ):
+        self.sql_repository = sql_repository
+        self.db_connection = db_connection
+        self.model = model
+
+        seen: set[NoteId] = set()
+        self.note_ids: list[NoteId] = []
+        for note_id in note_ids:
+            if note_id in seen:
+                continue
+            seen.add(note_id)
+            if note_id in model.nodes:
+                self.note_ids.append(note_id)
+
+        self.node_snapshots: list[_NodeSnapshot] = []
+        self.connection_snapshots: list[_ConnectionSnapshot] = []
+
+    def _refresh_snapshots(self) -> None:
+        self.node_snapshots = [
+            _NodeSnapshot.from_node(self.model.nodes[note_id]) for note_id in self.note_ids
+        ]
+
+        selected_ids = {snapshot.note_id for snapshot in self.node_snapshots}
+        self.connection_snapshots = [
+            _snapshot_from_connection(connection)
+            for connection in self.model.connections.values()
+            if connection.from_note_id in selected_ids or connection.to_note_id in selected_ids
+        ]
+
+    def execute(self) -> bool:
+        if not self.note_ids or any(note_id not in self.model.nodes for note_id in self.note_ids):
+            return False
+
+        # Redo may follow edits that are not themselves history commands. Capture
+        # the current state each time so a later undo never resurrects stale data.
+        self._refresh_snapshots()
+        self.sql_repository.delete_nodes(self.db_connection, self.note_ids)
+        self.model.remove_nodes_batch(self.note_ids)
+        return True
+
+    def undo(self) -> None:
+        nodes = [snapshot.to_node() for snapshot in self.node_snapshots]
+        connections = [_connection_from_snapshot(snapshot) for snapshot in self.connection_snapshots]
+        connection_ids = self.sql_repository.restore_deleted_subgraph(
+            self.db_connection,
+            nodes,
+            connections,
+        )
+        if len(connection_ids) != len(connections):
+            raise RuntimeError("Database did not return an ID for every restored connection.")
+
+        for connection, connection_id in zip(connections, connection_ids):
+            connection.connection_id = connection_id
+
+        self.model.add_nodes_batch(nodes)
+        for connection in connections:
+            self.model.add_connection(connection)
 
 
 class MoveNodesCommand(HistoryCommand):

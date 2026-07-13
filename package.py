@@ -17,7 +17,7 @@ PYPROJECT_FILENAME = "pyproject.toml"
 UTILS_FILE_PATH_IN_SRC = os.path.join(SRC_DIR, "common", "utils.py")
 BUILD_DIR = "build_pkg"
 DIST_DIR = "dist"
-FILES_TO_INCLUDE_IN_ROOT = ["LICENSE.txt", "README.md", "config.json"]
+FILES_TO_INCLUDE_IN_ROOT = ["LICENSE.txt", "README.md", "CHANGELOG.md", "config.json"]
 
 
 def get_version() -> str:

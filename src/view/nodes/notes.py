@@ -3,7 +3,7 @@ import logging
 import os
 import re
 import weakref
-from typing import TYPE_CHECKING, Set
+from typing import TYPE_CHECKING, Optional, Set
 
 from aqt import mw
 from aqt.qt import (
@@ -32,7 +32,9 @@ from aqt.qt import (
 )
 
 from ...common.constants import ANKIMAPS_CONSTANTS
+from ...common.mathjax import MathJaxFragment, mathjax_resource_url, replace_mathjax_fragments
 from ...model.node import MindMapNode
+from ..mathjax_renderer import MathJaxRenderer, MathJaxRequest
 from .states import NoteState
 
 if TYPE_CHECKING:
@@ -78,7 +80,7 @@ def _blur_clozes(html_content: str, theme_mode: str) -> str:
         block_len = min(max(len(text.strip()), 4), 28)
         blank = "&nbsp;" * block_len
         return (
-            f'<span style="background-color: {fill}; color: {fill}; '
+            f'<span class="ankimaps-cloze-mask" style="background-color: {fill}; color: {fill}; '
             f'border: 1px solid {border};">{blank}</span>'
         )
 
@@ -92,12 +94,18 @@ def _blur_clozes(html_content: str, theme_mode: str) -> str:
 class NoteSignals(QObject):
     note_double_clicked = pyqtSignal(str)
     note_resized = pyqtSignal(str, float)
+    geometry_changed = pyqtSignal(str)
 
 
 class MindMapNoteView(QGraphicsObject):
     """Graphics item that shows an Anki note inside the mind‑map."""
 
-    def __init__(self, mindmap_node: MindMapNode, theme_mode: str = "Light"):
+    def __init__(
+        self,
+        mindmap_node: MindMapNode,
+        theme_mode: str = "Light",
+        mathjax_renderer: Optional[MathJaxRenderer] = None,
+    ):
         super().__init__()
 
         self.mindmap_node = mindmap_node
@@ -106,6 +114,10 @@ class MindMapNoteView(QGraphicsObject):
         self.signals = NoteSignals()
         self.state: NoteState = NoteState.NORMAL
         self._cloze_blur_enabled = False
+        self._mathjax_renderer = mathjax_renderer
+        self._mathjax_keys: set[str] = set()
+        if self._mathjax_renderer:
+            self._mathjax_renderer.result_ready.connect(self._on_mathjax_result_ready)
 
         self.sticky_lines: Set[weakref.ReferenceType["StickyLine"]] = set()
 
@@ -247,6 +259,48 @@ class MindMapNoteView(QGraphicsObject):
         )
         image_width = max(available_width - 10, 10)
         final_html = re.sub(r"<img", f'<img width="{image_width}"', html_with_tables, flags=re.IGNORECASE)
+        self._mathjax_keys = set()
+        if self._mathjax_renderer:
+            font_px = max(float(self.mindmap_node.font_size) * (96.0 / 72.0), 1.0)
+
+            def replace_fragment(fragment: MathJaxFragment) -> Optional[str]:
+                if not fragment.tex.strip() or "ankimaps-cloze-mask" in fragment.original:
+                    return None
+
+                request = MathJaxRequest(
+                    tex=fragment.tex,
+                    display=fragment.display,
+                    font_px=font_px,
+                    foreground=colors["text"].name(),
+                )
+                key, rendered = self._mathjax_renderer.get_or_request(request)
+                self._mathjax_keys.add(key)
+                if not rendered:
+                    return None
+
+                resource_url = QUrl(mathjax_resource_url(key))
+                if not resource_url.isValid() or not resource_url.toString():
+                    logger.warning("Could not create a valid MathJax image URL for %s", key[:10])
+                    return None
+                self.document.addResource(
+                    QTextDocument.ResourceType.ImageResource,
+                    resource_url,
+                    rendered.image,
+                )
+                scale = min(1.0, available_width / max(rendered.logical_width, 1.0))
+                logical_width = max(1.0, rendered.logical_width * scale)
+                logical_height = max(1.0, rendered.logical_height * scale)
+                alignment = "middle" if not fragment.display else "baseline"
+                image_html = (
+                    f'<img data-ankimaps-mathjax="{key}" src="{resource_url.toString()}" '
+                    f'width="{logical_width:.2f}" height="{logical_height:.2f}" '
+                    f'style="vertical-align: {alignment};">'
+                )
+                if fragment.display:
+                    return f'<p align="center" style="margin: 4px 0;">{image_html}</p>'
+                return image_html
+
+            final_html = replace_mathjax_fragments(final_html, replace_fragment)
         if self._theme_mode.lower() == "dark":
             final_html = f'<div style="color: {colors["text"].name()};">{final_html}</div>'
         self.document.setHtml(final_html)
@@ -258,6 +312,14 @@ class MindMapNoteView(QGraphicsObject):
 
         self.update_attached_lines()
         self.update()
+
+    def _on_mathjax_result_ready(self, key: str):
+        if key not in self._mathjax_keys:
+            return
+        previous_rect = QRectF(self._rect)
+        self.update_size()
+        if previous_rect != self._rect:
+            self.signals.geometry_changed.emit(str(self.note_id))
 
     def update_attached_lines(self):
         for line_ref in list(self.sticky_lines):

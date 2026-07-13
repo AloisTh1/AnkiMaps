@@ -12,6 +12,7 @@ from aqt.qt import QAction, QDesktopServices, QDialog, QFileDialog, QUrl
 from aqt.utils import showInfo, showWarning
 
 from .src.common.constants import ANKIMAPS_CONSTANTS
+from .src.common.release_notes import build_release_notes
 from .src.common.io import (
     create_backup,
     delete_mindmap_file,
@@ -27,6 +28,10 @@ from .src.repository.db.sql_repository import SqlLiteRepository
 from .src.repository.mindmap_files_repository import MindmapFilesRepository
 from .src.view.landing_page import LandingWindow
 from .src.view.mindmap_window import MindMapWindow
+
+
+if mw:
+    mw.addonManager.setWebExports(__name__, r"src/view/assets/mathjax/.*\.js")
 
 
 class ListLogHandler(logging.Handler):
@@ -46,6 +51,7 @@ buffer_handler = ListLogHandler(log_buffer)
 addon_logger.addHandler(buffer_handler)
 
 CONFIG_THEME_MODE_KEY = "theme_mode"
+CONFIG_LAST_SEEN_NEWS_VERSION_KEY = "last_seen_news_version"
 DEFAULT_THEME_MODE = "Light"
 VALID_THEME_MODES = {"Dark", "Light"}
 
@@ -80,7 +86,7 @@ class MindMapAddon:
     def _on_note_deleted(self, _, note_ids: Sequence[NoteId]):
         if controller := self._mindmap_controller:
             if mw:
-                mw.taskman.run_on_main(lambda: controller.delete_notes_from_map(list(note_ids)))
+                mw.taskman.run_on_main(lambda: controller.purge_deleted_anki_notes(list(note_ids)))
 
     def _on_window_closed(self):
         addon_logger.info("[ADDON] MindMap window closed. Cleaning up.")
@@ -123,10 +129,13 @@ class MindMapAddon:
         mindmap_names, mindmap_infos = self.landing_controller.get_mindmaps_with_info()
 
         current_version = self._get_current_version()
+        news_text, has_unseen_news = self._get_news_text(current_version)
         self.landing_dialog = LandingWindow(
             mindmap_names,
             mindmap_infos,
             current_version,
+            news_text,
+            show_news_on_open=has_unseen_news,
             theme_mode=self._get_theme_mode(),
             parent=mw,
         )
@@ -144,6 +153,7 @@ class MindMapAddon:
         dialog_result = self.landing_dialog.exec()
         selected_theme = self.landing_dialog.theme_mode()
         self._set_theme_mode(selected_theme)
+        self._set_last_seen_news_version(current_version)
 
         if dialog_result == QDialog.DialogCode.Accepted and self.landing_dialog.selected_map:
             self._launch_mindmap_window(self.landing_dialog.selected_map)
@@ -170,6 +180,13 @@ class MindMapAddon:
         config[CONFIG_THEME_MODE_KEY] = normalized
         self._write_config(config)
 
+    def _set_last_seen_news_version(self, version: str) -> None:
+        if not version or version == "unknown":
+            return
+        config = self._get_config()
+        config[CONFIG_LAST_SEEN_NEWS_VERSION_KEY] = version
+        self._write_config(config)
+
     def _get_current_version(self) -> str:
         addon_path = os.path.dirname(__file__)
         manifest_path = os.path.join(addon_path, "manifest.json")
@@ -181,6 +198,23 @@ class MindMapAddon:
 
         version = manifest.get("version")
         return str(version).strip() if version else "unknown"
+
+    def _get_news_text(self, current_version: str) -> tuple[str, bool]:
+        last_seen_version = str(self._get_config().get(CONFIG_LAST_SEEN_NEWS_VERSION_KEY, "")).strip()
+        changelog_text = self._read_changelog()
+        return build_release_notes(
+            changelog_text,
+            current_version=current_version,
+            last_seen_version=last_seen_version,
+        )
+
+    def _read_changelog(self) -> str:
+        changelog_path = os.path.join(os.path.dirname(__file__), "CHANGELOG.md")
+        try:
+            with open(changelog_path, "r", encoding="utf-8") as changelog_file:
+                return changelog_file.read()
+        except OSError:
+            return ""
 
     def _on_rename_map_requested(self, old_name: str, new_name: str):
         if rename_mindmap_file(old_mindmap_name=old_name, new_mindmap_name=new_name):
