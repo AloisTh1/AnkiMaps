@@ -367,6 +367,7 @@ class MindMapView(QGraphicsView):
         new_scene.setBackgroundBrush(QBrush(_scene_background_color(self._theme_mode)))
         self._all_view_items.clear()
         self._all_lines.clear()
+        self._currently_visible_ids.clear()
         new_scene.addItem(self._center_logo_item)
         for node_data in self.model.nodes.values():
             self._add_note_item_to_scene(node_data, new_scene)
@@ -399,6 +400,7 @@ class MindMapView(QGraphicsView):
 
     def on_nodes_removed(self, node_ids: List[NoteId]):
         for nid in node_ids:
+            self._currently_visible_ids.discard(nid)
             if view_item := self._all_view_items.pop(nid, None):
                 self.scene().removeItem(view_item)
                 self._search_highlighted_ids.discard(nid)

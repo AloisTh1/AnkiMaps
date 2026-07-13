@@ -37,8 +37,9 @@ class HistoryManager:
         if not self._undo_stack:
             return False
 
-        command = self._undo_stack.pop()
+        command = self._undo_stack[-1]
         command.undo()
+        self._undo_stack.pop()
         self._redo_stack.append(command)
         return True
 
@@ -46,11 +47,11 @@ class HistoryManager:
         if not self._redo_stack:
             return False
 
-        command = self._redo_stack.pop()
+        command = self._redo_stack[-1]
         if not command.execute():
-            self._redo_stack.append(command)
             return False
 
+        self._redo_stack.pop()
         self._undo_stack.append(command)
         return True
 

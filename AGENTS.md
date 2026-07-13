@@ -15,6 +15,7 @@ Packaging artwork is in `assets/packaging/`; generated add-ons go to `dist/`. Re
 ## Build, Test, and Development Commands
 
 - `uv sync --frozen`: install the locked Python 3.9 dependencies.
+- `uv run --frozen python -m unittest discover -s tests`: run the automated test suite.
 - `uv run pre-commit run --all-files`: run whitespace, YAML, Ruff, formatting, and secret checks.
 - `uv run ruff check .`: lint Python sources; add `--fix` for safe fixes.
 - `uv run ruff format --check .`: verify formatting without rewriting files.
@@ -29,7 +30,7 @@ Use four-space indentation and Ruff formatting with a 110-character line limit. 
 
 ## Testing Guidelines
 
-There is no committed automated test suite or coverage threshold. Run pre-commit and smoke-test every change in Anki. Exercise map creation/loading, edits, persistence after restart, and affected shortcuts or dialogs. Add future tests under `tests/`, mirror the source layout, and name files `test_<module>.py`.
+Tests use Python's `unittest` framework under `tests/`; name files `test_<module>.py`. There is no formal coverage threshold. Run the full suite and pre-commit, then smoke-test UI changes in Anki. Exercise map creation/loading, edits, persistence after restart, and affected shortcuts or dialogs.
 
 ## Commit & Pull Request Guidelines
 

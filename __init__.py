@@ -84,7 +84,7 @@ class MindMapAddon:
     def _on_note_deleted(self, _, note_ids: Sequence[NoteId]):
         if controller := self._mindmap_controller:
             if mw:
-                mw.taskman.run_on_main(lambda: controller.delete_notes_from_map(list(note_ids)))
+                mw.taskman.run_on_main(lambda: controller.purge_deleted_anki_notes(list(note_ids)))
 
     def _on_window_closed(self):
         addon_logger.info("[ADDON] MindMap window closed. Cleaning up.")

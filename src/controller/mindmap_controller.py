@@ -18,10 +18,11 @@ from ..model.node import MindMapNode
 from ..repository.anki_repository import AnkiRepository
 from ..repository.db.sql_repository import SqlLiteRepository
 from .history_commands import (
+    DeleteNodesCommand,
+    LinkConnectionCommand,
     MoveNodesCommand,
     UpdateConnectionColorCommand,
     UnlinkConnectionCommand,
-    LinkConnectionCommand,
     build_link_snapshot,
     build_snapshot_from_existing,
 )
@@ -415,12 +416,31 @@ class MindmapController(QObject):
         if not self.model or not self.db_connection:
             return
 
+        self._execute_history_command(
+            DeleteNodesCommand(
+                sql_repository=self.sql_repository,
+                db_connection=self.db_connection,
+                model=self.model,
+                note_ids=note_ids,
+            )
+        )
+
+    def purge_deleted_anki_notes(self, note_ids: list[NoteId]):
+        """Removes collection-deleted notes without creating undoable ghost nodes."""
+        if not self.model or not self.db_connection:
+            return
+
+        mapped_note_ids = list(dict.fromkeys(note_id for note_id in note_ids if note_id in self.model.nodes))
+        if not mapped_note_ids:
+            return
+
         try:
-            self.sql_repository.delete_nodes(self.db_connection, note_ids)
+            self.sql_repository.delete_nodes(self.db_connection, mapped_note_ids)
         except Exception as e:
             showCritical(f"Error deleting notes from DB, please report to developper : {e}")
             raise
-        self.model.remove_nodes_batch(note_ids)
+        self.model.remove_nodes_batch(mapped_note_ids)
+        self._history.clear()
 
     def toggle_connection(
         self,
@@ -482,8 +502,15 @@ class MindmapController(QObject):
             return
         try:
             id1, id2 = NoteId(int(note_id_1_str)), NoteId(int(note_id_2_str))
-            self.sql_repository.delete_connection(self.db_connection, id1, id2)
-            self.model.remove_connection(id1, id2)
+            if connection := self.model.get_connection(id1, id2):
+                self._execute_history_command(
+                    UnlinkConnectionCommand(
+                        sql_repository=self.sql_repository,
+                        db_connection=self.db_connection,
+                        model=self.model,
+                        snapshot=build_snapshot_from_existing(connection),
+                    )
+                )
         except (ValueError, TypeError) as e:
             logger.info(f"Invalid Note ID for deletion: {e}")
 

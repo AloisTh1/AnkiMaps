@@ -93,6 +93,63 @@ class SqlLiteRepository:
             logger.error(f"Error adding nodes: {e}")
             raise
 
+    def restore_deleted_subgraph(
+        self,
+        conn: sqlite3.Connection,
+        nodes: List[MindMapNode],
+        connections: List[MindMapConnection],
+    ) -> List[int]:
+        """Atomically restores deleted nodes and their incident connections."""
+        if not nodes:
+            return []
+
+        node_rows = [
+            (
+                node.note_id,
+                ",".join(map(str, node.shown_field_indices)),
+                node.x,
+                node.y,
+                node.width,
+                node.font_size,
+            )
+            for node in nodes
+        ]
+        try:
+            conn.execute("BEGIN")
+            conn.executemany(
+                f"INSERT INTO {TABLES.NOTES_TABLE.value} "
+                "(noteId, fieldsToShow, x, y, width, fontSize) VALUES (?, ?, ?, ?, ?, ?)",
+                node_rows,
+            )
+
+            cursor = conn.cursor()
+            connection_ids: List[int] = []
+            for connection in connections:
+                cursor.execute(
+                    f"INSERT INTO {TABLES.CONNECTIONS_TABLE.value} "
+                    "(fromNoteId, toNoteId, connectionType, color, size, label, labelSize) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        connection.from_note_id,
+                        connection.to_note_id,
+                        connection.connection_type.value,
+                        connection.color,
+                        connection.size,
+                        connection.label,
+                        connection.label_size,
+                    ),
+                )
+                if cursor.lastrowid is None:
+                    raise sqlite3.OperationalError("lastrowid was not set after restoring a connection.")
+                connection_ids.append(cursor.lastrowid)
+
+            conn.commit()
+            return connection_ids
+        except sqlite3.Error as e:
+            conn.rollback()
+            logger.error(f"Error restoring deleted nodes: {e}")
+            raise
+
     def update_note_positions(self, conn: sqlite3.Connection, position_data: list[dict]) -> None:
         """Updates positions for a list of notes. Raises an exception on failure."""
         if not position_data:
