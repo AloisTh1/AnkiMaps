@@ -6,6 +6,7 @@ from typing import Any, Optional, Union
 from anki.cards import Card
 from anki.collection import Collection
 from anki.decks import Deck, DeckId, FilteredDeckConfig
+from anki.errors import FilteredDeckError
 from anki.notes import Note, NoteId
 from aqt import QObject, dialogs, gui_hooks, mw, pyqtSignal
 from aqt.operations import QueryOp
@@ -578,9 +579,20 @@ class MindmapController(QObject):
         del deck.config.search_terms[:]
         deck.config.search_terms.extend(search_terms)
 
-        mw.col.sched.add_or_update_filtered_deck(deck=deck)
+        try:
+            mw.col.sched.add_or_update_filtered_deck(deck=deck)
+            rebuild_result = mw.col.sched.rebuild_filtered_deck(deck_id)
+        except FilteredDeckError as exc:
+            logger.info(f"Could not build AnkiMaps review deck: {exc}")
+            showInfo(
+                "No matching due cards could be added to the review deck. "
+                "Some cards may already be in another filtered deck or suspended."
+            )
+            mw.col.decks.remove([deck_id])
+            self.is_reviewing = False
+            self.review_state_changed.emit(False)
+            return
 
-        rebuild_result = mw.col.sched.rebuild_filtered_deck(deck_id)
         logger.info(f"Rebuilt filtered deck. New card count: {rebuild_result.count}")
 
         if rebuild_result.count > 0:
