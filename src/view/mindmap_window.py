@@ -47,6 +47,7 @@ from ..model.mindmap import MindMap
 from .line_type_selector import LineTypeSelectorWidget
 from .log_viewer import LogViewer
 from .mindmap_view import MindMapView
+from .minimap import Minimap
 from .nodes.notes import MindMapNoteView
 
 logger = logging.getLogger(ANKIMAPS_CONSTANTS.ADD_ON_NAME.value)
@@ -299,6 +300,7 @@ class MindMapWindow(QMainWindow):
 
         self.mindmap_view = MindMapView(model, self, theme_mode=self._theme_mode)
         right_layout.addWidget(self.mindmap_view, 1)
+        self.minimap = Minimap(self.mindmap_view, theme_mode=self._theme_mode)
 
         # --- Add Controls to Panels ---
         self._add_search_bar(menu_layout)
@@ -743,6 +745,13 @@ class MindMapWindow(QMainWindow):
         zoom_layout.addWidget(self.zoom_slider)
         zoom_layout.addWidget(zoom_in_btn)
         zoom_layout.addWidget(self.zoom_label)
+
+        self.minimap_button = QPushButton("Minimap")
+        self.minimap_button.setCheckable(True)
+        self.minimap_button.setChecked(True)
+        self.minimap_button.setToolTip("Show or hide the minimap")
+        self.minimap_button.toggled.connect(self.minimap.setVisible)
+        zoom_layout.addWidget(self.minimap_button)
 
         layout.addWidget(zoom_container)
         self._update_zoom_slider(1.0)
