@@ -11,6 +11,7 @@ AnkiMaps brings mind maps directly into Anki so you can visualize concepts, conn
 - Start focused review sessions from the current map only.
 - Keep context during review with map-level highlighting.
 - Customize note display, connection style, and layout behavior.
+- Navigate large maps with the minimap: click or drag to move around, and use the **Minimap** button beside the zoom controls to show or hide it.
 
 ## First Installation
 

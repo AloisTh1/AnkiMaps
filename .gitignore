@@ -25,3 +25,22 @@ repomix-output.xml
 
 # Playwright browser state (publish_ankiweb.py)
 .playwright-state/
+
+# Local AI assistant instructions, configuration, and state
+AGENTS.md
+CLAUDE.md
+CODEX.md
+GEMINI.md
+.agents/
+.claude/
+.codex/
+.cursor/
+.windsurf/
+.aider*
+.cursorrules
+.windsurfrules
+.mcp.json
+.github/copilot-instructions.md
+.github/instructions/
+.github/prompts/
+*.prompt.md
