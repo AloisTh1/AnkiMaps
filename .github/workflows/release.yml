@@ -31,8 +31,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          output=$(uv run semantic-release version 2>&1) || true
-          echo "$output"
+          if output=$(uv run --frozen semantic-release version 2>&1); then
+            echo "$output"
+          else
+            echo "$output"
+            exit 1
+          fi
           if echo "$output" | grep -q "already been released"; then
             echo "released=false" >> "$GITHUB_OUTPUT"
           else
@@ -43,4 +47,4 @@ jobs:
         if: steps.version.outputs.released == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: uv run semantic-release publish
+        run: uv run --frozen semantic-release publish
