@@ -2,6 +2,27 @@
 
 <!-- version list -->
 
+## v2.8.0 (2026-10-12)
+
+### Bug Fixes
+
+- Fail releases on build errors and refresh uncached metadata
+  ([`9146112`](https://github.com/AloisTh1/AnkiMaps/commit/9146112817d0810c3acf44c5695a6c53b1bca833))
+
+- Keep lockfile version in sync during releases
+  ([`14767a6`](https://github.com/AloisTh1/AnkiMaps/commit/14767a61156b73fa6ca6a3667dcad7da97c8fc89))
+
+### Documentation
+
+- Illustrate minimap navigation for the release
+  ([`ef1235a`](https://github.com/AloisTh1/AnkiMaps/commit/ef1235a55b11c4f6e338fd46d426974b7e7a4c5f))
+
+### Features
+
+- Add minimap navigation for large maps
+  ([`a8dfcb2`](https://github.com/AloisTh1/AnkiMaps/commit/a8dfcb2bb7110bc24bc7f8f3bbe30ccf6b315106))
+
+
 ## v2.7.0 (2026-07-13)
 
 ### Bug Fixes
